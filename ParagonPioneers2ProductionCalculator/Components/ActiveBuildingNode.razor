@@ -1,0 +1,31 @@
+﻿@using ParagonPioneers2ProductionCalculator.Buildings
+
+<div class="light" style="align-content: center">
+	<img class="building" draggable="false" src=@(@$".\Icons\{this.Building.IconLocation}") />
+	@if (!this.HideAmount)
+	{
+		<div class="text" style="margin-top: 0px">
+			@(this.Building.Amount.ToString("0.##") + " ")
+			<InputCheckbox Value=this.IsChecked ValueChanged=_onCheckedChanged ValueExpression="@(() => this.IsChecked)" />
+		</div>
+	}
+</div>
+
+@code {
+	[Parameter]
+	public required bool IsChecked { get; set; }
+
+	[Parameter]
+	public required AbstractBuilding Building { get; set; }
+
+	[Parameter]
+	public required EventCallback<bool> OnCheckedChanged { get; set; }
+
+	[Parameter]
+	public bool HideAmount { get; set; }
+
+	private async Task _onCheckedChanged(bool value)
+	{
+		await this.OnCheckedChanged.InvokeAsync(value);
+	}
+}

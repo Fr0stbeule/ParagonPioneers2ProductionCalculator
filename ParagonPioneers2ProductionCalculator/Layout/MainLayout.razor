@@ -1,0 +1,19 @@
+﻿@inherits LayoutComponentBase
+
+<style>
+	body {
+		background-color: rgb(149, 106, 60);
+	}
+</style>
+
+<div class="page">
+	<div class="sidebar" style="width: fit-content; height: fit-content; left: 0">
+		<NavMenu />
+	</div>
+
+	<main style="width: 100vw; overflow-x: auto">
+		<article class="content px-4">
+			@Body
+		</article>
+	</main>
+</div>

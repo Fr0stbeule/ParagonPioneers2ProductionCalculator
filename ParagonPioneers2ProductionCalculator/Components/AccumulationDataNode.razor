@@ -1,0 +1,90 @@
+﻿@using ParagonPioneers2ProductionCalculator.Buildings
+@using ParagonPioneers2ProductionCalculator.Tiles
+
+@inject Blackboard Blackboard
+
+<div>
+	@foreach (var region in this.Tiles)
+	{
+		<div style="display:flex">
+			@foreach (var group in region)
+			{
+				<AccumulationNode IconLocation="@group.First().tile.IconLocation" ImageClass="tile" MissingAmount="@group.Where(x => !x.ignore).Sum(x => x.tile.Amount)" TotalAmount="@group.Sum(x => x.tile.Amount)" />
+			}
+		</div>
+	}
+	@foreach (var populationGroup in this.GetBuildings())
+	{
+		<div style="display:flex">
+			@foreach (var building in populationGroup)
+			{
+				@if (this.TotalAmounts.TryGetValue(building.GetType(), out var data))
+				{
+					<AccumulationNode IconLocation="@building.IconLocation" ImageClass="building" MissingAmount="data.missing" TotalAmount="data.total" />
+				}
+			}
+		</div>
+	}
+</div>
+
+@code {
+	[Parameter]
+	public required List<SupplierChoice> SupplierChoices { get; set; }
+
+	public Dictionary<Type, (double missing, double total)> TotalAmounts { get; private set; } = [];
+
+	public List<List<IGrouping<Type, (AbstractTile tile, bool ignore)>>> Tiles { get; private set; } = [];
+
+	public IEnumerable<IEnumerable<AbstractBuilding>> GetBuildings()
+	{
+		return
+		[
+			this.Blackboard.PioneersBuildings,
+			this.Blackboard.ColonistsBuildings,
+			this.Blackboard.TownsmenBuildings,
+			this.Blackboard.MerchantsBuildings,
+			this.Blackboard.ParagonsBuildings,
+			this.Blackboard.FarmersBuildings,
+			this.Blackboard.WorkersBuildings,
+			this.Blackboard.NorthernBuildings,
+			this.Blackboard.ApprenticeBuildings,
+			this.Blackboard.AdeptsBuildings,
+			this.Blackboard.ArchmagesBuildings
+		];
+	}
+
+	protected override void OnParametersSet()
+	{
+		var allBuildings = this.SupplierChoices
+			.SelectMany(x => CollectSupplier(x.SelectedSupplier, x.Ignore))
+			.ToList();
+
+		this.TotalAmounts = allBuildings
+			.GroupBy(x => x.building.GetType())
+			.ToDictionary(x => x.Key, x => (x.Where(static x => !x.ignore).Sum(static x => x.building.Amount), x.Sum(static x => x.building.Amount)));
+
+		this.Tiles = allBuildings
+			.Where(x => x.building.TileRequirement is not null)
+			.Select(x => (x.building.TileRequirement!.Tile, x.ignore))
+			.GroupBy(x => x.Tile.GetType())
+			.OrderByDescending(x => x.Key.Namespace)
+			.ThenBy(x => x.Key.Name)
+			.GroupBy(x => x.Key.Namespace)
+			.Select(x => x.ToList())
+			.ToList();
+
+		base.OnParametersSet();
+	}
+
+	private IEnumerable<(AbstractBuilding building, bool ignore)> CollectSupplier(AbstractBuilding building, bool ignore = false)
+	{
+		yield return (building, ignore);
+		foreach (var supplier in building.SupplierChoices)
+		{
+			foreach (var sub in CollectSupplier(supplier.SelectedSupplier, supplier.Ignore || ignore))
+			{
+				yield return sub;
+			}
+		}
+	}
+}

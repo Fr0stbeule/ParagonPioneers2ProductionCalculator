@@ -1,0 +1,153 @@
+﻿@using ParagonPioneers2ProductionCalculator.Buildings
+@using ParagonPioneers2ProductionCalculator.Buildings.HighSeas
+@using ParagonPioneers2ProductionCalculator.Buildings.Northern
+@using ParagonPioneers2ProductionCalculator.Buildings.Southern
+@using ParagonPioneers2ProductionCalculator.Buildings.Southern.Farmers
+@using ParagonPioneers2ProductionCalculator.Buildings.Temperate
+@using ParagonPioneers2ProductionCalculator.Buildings.Temperate.Pioneers
+@using ParagonPioneers2ProductionCalculator.Components
+
+@page "/configuration"
+@inject Blackboard Blackboard
+
+<h3>Configuration</h3>
+<div style="display: flex">
+	<div>
+		<div class="bordered tutorial-bordered">
+			<h3>Population Consumption</h3><br />
+			<InputRadioGroup @bind-Value="@this.Blackboard.DifficultyMultiplier">
+				@for (int i = 2; i < 9; ++i)
+				{
+					<div>
+						<InputRadio Value="i * 0.25" />
+						@($" {i * 0.25 * 100}%")
+						@(i switch { 2 => " (Easy)", 3 => " (Medium)", 4 => " (Hard - Default)", 5 => " (Very Hard)", _ => "", })
+					</div>
+				}
+			</InputRadioGroup>
+		</div>
+		<div class="bordered tutorial-bordered">
+			<h3>Other Settings</h3>
+			<div>
+				@("Boost Militia Production: ")
+				<InputCheckbox @bind-value=this._boostMilitia @bind-value:after=_setBoostMilita />
+			</div>
+			<div>
+				@("Boost Slinger Production: ")
+				<InputCheckbox @bind-value=this._boostSlinger @bind-value:after=_setBoostSlinger />
+			</div>
+			<div>
+				@("Boost Fisherman's Hut Production: ")
+				<InputCheckbox @bind-value=this._boostFishermansHut @bind-value:after=_setBoostFishermansHut />
+			</div>
+		</div>
+	</div>
+	<div class="bordered tutorial-bordered">
+		<h3>Default supplier configuration</h3>
+		@foreach (var (good, config) in this._defaultConfiguration)
+		{
+			<div class="centered" style="display: flex">
+				<button class="light" style="border-color: black; border: solid; height: fit-content" onclick=@(() => _applyDefaultConfiguration(good, config))>
+					Apply
+				</button>
+				<SupplierChoiceNode Choice=config.DefaultChoice HideAmount=true />
+				@if (config.RegionalChoice != null)
+				{
+					<SupplierChoiceNode Choice=config.RegionalChoice HideAmount=true />
+				}
+			</div>
+		}
+	</div>
+</div>
+
+@code
+{
+	private bool _boostMilitia;
+	private bool _boostSlinger;
+	private bool _boostFishermansHut;
+	private readonly Dictionary<eGood, ChoiceConfiguration> _defaultConfiguration = [];
+
+	protected override Task OnInitializedAsync()
+	{
+		this._boostMilitia = PioneersHut.BoostProduction;
+		this._boostSlinger = FarmersShack.BoostProduction;
+		this._boostFishermansHut = FishermansHut.BoostProduction;
+
+		foreach (var good in Enum.GetValues<eGood>().Cast<eGood>())
+		{
+			if (SupplierConfiguration.GetSupplier(good).Count > 1)
+			{
+				SupplierChoice supplierChoice = new([new RegionalBuilding(), .. SupplierConfiguration.GetSupplier(good)]) { Ignore = true };
+				var regional = supplierChoice.PotentialSupplier
+					.GroupBy(_getOrder)
+					.SingleOrDefault(x => x.Count() > 1)
+					?.ToList();
+
+				bool useRegionalChoice = regional != null && regional.Count < supplierChoice.PotentialSupplier.Count;
+				SupplierChoice? regionalChoice = useRegionalChoice ? new(regional!) { Ignore = true } : null;
+
+				this._defaultConfiguration.Add(good, new(supplierChoice, regionalChoice));
+			}
+		}
+
+		return base.OnInitializedAsync();
+	}
+
+	private void _setBoostMilita() => PioneersHut.BoostProduction = _boostMilitia;
+
+	private void _setBoostSlinger() => FarmersShack.BoostProduction = _boostSlinger;
+
+	private void _setBoostFishermansHut() => FishermansHut.BoostProduction = _boostFishermansHut;
+
+	private void _applyDefaultConfiguration(eGood good, ChoiceConfiguration configuration)
+	{
+		this.Blackboard.Configuration.ForEach(x => _processSupplierChoice((good, configuration), x, null));
+	}
+
+	private void _processSupplierChoice((eGood good, ChoiceConfiguration choices) configuration, SupplierChoice supplierChoice, AbstractBuilding? parent)
+	{
+		if (supplierChoice.PotentialSupplier.Count > 1)
+		{
+			if (supplierChoice.SelectedSupplier.Production?.Good == configuration.good)
+			{
+				var supplierType = configuration.choices.DefaultChoice.SelectedSupplier.GetType();
+				if (supplierType == typeof(RegionalBuilding))
+				{
+					int parentIndex = _getOrder(parent!);
+					supplierChoice.SelectedSupplier = supplierChoice.PotentialSupplier
+						.OrderByDescending(x => _getOrder(x) == parentIndex)
+						.ThenBy(_getOrder)
+						.ThenByDescending(x => x.GetType() == configuration.choices.RegionalChoice?.SelectedSupplier.GetType())
+						.First();
+				}
+				else
+				{
+					supplierChoice.SelectedSupplier = supplierChoice.PotentialSupplier.Single(x => x.GetType() == supplierType);
+				}
+			}
+		}
+
+		foreach (var supplier in supplierChoice.PotentialSupplier)
+		{
+			foreach (var choice in supplier.SupplierChoices)
+			{
+				_processSupplierChoice(configuration, choice, supplier);
+			}
+		}
+	}
+
+	private static int _getOrder(AbstractBuilding building)
+	{
+		return building switch
+		{
+			TemperateBuilding => 1,
+			SouthernBuilding => 2,
+			NorthernBuilding => 3,
+			HighSeasBuilding => 4,
+			RegionalBuilding => 5,
+			_ => throw new Exception()
+		};
+	}
+
+	private record ChoiceConfiguration(SupplierChoice DefaultChoice, SupplierChoice? RegionalChoice) { }
+}

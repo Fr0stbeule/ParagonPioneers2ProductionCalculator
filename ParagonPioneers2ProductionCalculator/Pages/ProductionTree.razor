@@ -1,0 +1,24 @@
+﻿@using ParagonPioneers2ProductionCalculator.Buildings;
+@using ParagonPioneers2ProductionCalculator.Components
+
+@page "/productiontree"
+@inject Blackboard Blackboard
+
+<div>
+	@foreach (var item in this.Blackboard.Configuration)
+	{
+		@if (item.SelectedSupplier.Amount != 0)
+		{
+			<SupplierChoiceNode Choice="item" />
+		}
+	}
+</div>
+
+@code
+{
+	protected override void OnParametersSet()
+	{
+		this.Blackboard.UpdateAmount();
+		base.OnParametersSet();
+	}
+}

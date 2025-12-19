@@ -1,0 +1,25 @@
+﻿@using ParagonPioneers2ProductionCalculator.Buildings
+
+<div style="align-content: center">
+	<button style="border: none; background: none; margin: 0; padding: 0" onclick=@OnClick>
+		<img class="building" draggable="false" src=@(@$".\Icons\{this.Building.IconLocation}") />
+	</button>
+	@if (!this.HideAmount)
+	{
+		<div class="text">
+			@this.Building.Amount.ToString("0.##")
+		</div>
+	}
+</div>
+
+@code
+{
+	[Parameter]
+	public required AbstractBuilding Building { get; set; }
+
+	[Parameter]
+	public required EventCallback OnClick { get; set; }
+
+	[Parameter]
+	public bool HideAmount { get; set; }
+}

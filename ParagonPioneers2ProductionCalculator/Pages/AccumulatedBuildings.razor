@@ -1,0 +1,19 @@
+﻿@using ParagonPioneers2ProductionCalculator.Buildings
+@using System.Linq
+@using ParagonPioneers2ProductionCalculator.Components
+@using ParagonPioneers2ProductionCalculator.Tiles
+
+@page "/accumulatedbuildings"
+@inject Blackboard Blackboard
+
+<AccumulationDataNode SupplierChoices="this.Blackboard.Configuration" />
+
+@code
+{
+	protected override void OnParametersSet()
+	{
+		this.Blackboard.UpdateAmount();
+
+		base.OnParametersSet();
+	}
+}

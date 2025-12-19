@@ -1,0 +1,18 @@
+﻿@using ParagonPioneers2ProductionCalculator.Tiles
+
+<div style="display:flex">
+	<div class="bordered">
+		<div class="light" style="align-content: center">
+			<img class="tile" draggable="false" src=@(@$".\Icons\{this.TileRequirement.Tile.IconLocation}") />
+			<div class="text">
+				@this.TileRequirement.Tile.Amount.ToString("0.##")
+			</div>
+		</div>
+	</div>
+</div>
+
+@code
+{
+	[Parameter]
+	public required TileRequirement TileRequirement { get; set; }
+}

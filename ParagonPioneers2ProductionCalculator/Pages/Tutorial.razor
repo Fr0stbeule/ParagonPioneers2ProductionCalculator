@@ -1,0 +1,75 @@
+﻿@using ParagonPioneers2ProductionCalculator.Buildings
+@using ParagonPioneers2ProductionCalculator.Buildings.Temperate.Pioneers
+@using ParagonPioneers2ProductionCalculator.Components
+
+@page "/"
+@inject Blackboard Blackboard
+
+<h3>Tutorial</h3>
+
+<div class="bordered tutorial-bordered">
+	<h3>Configuration</h3><br />
+	Set your population consumption here.<br />
+	You can also do bulk changes to the tree of your selected buildings. Select the building you want to use as default supplier and click the apply button to change the configuration. (see "Supplier Choice" below for more information)<br />
+	Be careful as this will override any manual changes made for the specific supplier!<br />
+	The first element in the selection means "regional". This will try to use a supplier from the same region as the building consuming the resource.<br />
+	When there are multiple supplier in a single region, there will be a second selection. This configuration is only relevant, when regional is selected.
+</div>
+
+<div class="bordered tutorial-bordered">
+	<h3>Buildings</h3><br />
+	Enter the amount of building you want to build. All buildings selected this way will not be used to satisfy the needs of each other.<br />
+	The order of the buildings differ from ingame.<br />
+	They are ordered by:
+	<ol>
+		<li>Population Buildings</li>
+		<li>Building Material Producer</li>
+		<li>Satisfaction Material Producer</li>
+		<li>Misc</li>
+		<li>Military Item Producer</li>
+		<li>Military Recruitment Buildings</li>
+	</ol>
+</div>
+
+<div class="bordered tutorial-bordered">
+	<h3>Supplier Choice</h3><br />
+	Buildings grouped horizonal by a border are potential supplier for a resource (here Wood).<br />
+	You can select one building, which should provide the resource. The sub supplier and required tiles are based on your selection.<br />
+	The check mark can be used to ignore supplier and their sub supplier and required tiles (e.g. if you have already build them).<br />
+	<SupplierChoiceNode Choice="this.TutorialSupplierChoice" />
+</div>
+
+<div class="bordered tutorial-bordered">
+	<h3>Accumulation</h3><br />
+	Shows an accumulated amount of buildings required for your selected buildings and their supplier.<br />
+	If the required amount of a building is zero, it will be excluded from the list.<br />
+	If the building requirements have been partially ignored, the total amount will be displayed in brackets below the missing amount.<br />
+	Here we need a total of 3 lumber jacks, but have 2 marked as ignore.<br />
+	<AccumulationDataNode SupplierChoices="this.TutorialAccumulation" />
+</div>
+
+@code
+{
+	public SupplierChoice TutorialSupplierChoice { get; } = new(SupplierConfiguration.GetSupplier(eGood.Wood));
+
+	public List<SupplierChoice> TutorialAccumulation { get; } = [new([new SawWorks()]), new([new Sawmill()])];
+
+	protected override Task OnInitializedAsync()
+	{
+		this.TutorialSupplierChoice.PotentialSupplier.ForEach(x =>
+		{
+			x.Amount = 1;
+			x.UpdateAmount(this.Blackboard.DifficultyMultiplier);
+		});
+
+		this.TutorialAccumulation.ForEach(x =>
+		{
+			x.SelectedSupplier.Amount = 1;
+			x.SelectedSupplier.UpdateAmount(this.Blackboard.DifficultyMultiplier);
+		});
+
+		this.TutorialAccumulation.Last().SelectedSupplier.SupplierChoices.First().Ignore = true;
+
+		return base.OnInitializedAsync();
+	}
+}

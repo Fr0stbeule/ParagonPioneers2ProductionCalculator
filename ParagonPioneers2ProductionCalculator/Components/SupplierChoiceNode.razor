@@ -1,0 +1,52 @@
+﻿@using ParagonPioneers2ProductionCalculator.Buildings
+
+<div style="display:flex">
+	<div class="bordered">
+		@foreach (var supplier in this.Choice.PotentialSupplier)
+		{
+			@if (supplier == this.Choice.SelectedSupplier)
+			{
+				<ActiveBuildingNode Building=supplier IsChecked=@this.Choice.Ignore OnCheckedChanged=@_onCheckedChanged HideAmount=@this.HideAmount />
+			}
+			else
+			{
+				<InactiveBuildingNode Building=supplier OnClick=@(() => _selectSupplier(supplier)) HideAmount=@this.HideAmount />
+			}
+		}
+	</div>
+
+	@if (!this.Choice.Ignore && (this.Choice.SelectedSupplier.SupplierChoices.Any() || this.Choice.SelectedSupplier.TileRequirement != null))
+	{
+		<div>
+			@foreach (var supplierChoice in this.Choice.SelectedSupplier.SupplierChoices)
+			{
+				<SupplierChoiceNode Choice=supplierChoice HideAmount=this.HideAmount />
+			}
+			@if (this.Choice.SelectedSupplier.TileRequirement != null)
+			{
+				<TileNode TileRequirement=this.Choice.SelectedSupplier.TileRequirement />
+			}
+		</div>
+	}
+</div>
+
+@code
+{
+	[Parameter]
+	public required SupplierChoice Choice { get; set; }
+
+	[Parameter]
+	public bool HideAmount { get; set; }
+
+	private void _selectSupplier(AbstractBuilding building)
+	{
+		this.Choice.SelectedSupplier = building;
+		StateHasChanged();
+	}
+
+	private void _onCheckedChanged(bool value)
+	{
+		this.Choice.Ignore = value;
+		StateHasChanged();
+	}
+}

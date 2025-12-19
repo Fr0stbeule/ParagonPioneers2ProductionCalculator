@@ -1,0 +1,65 @@
+﻿@using ParagonPioneers2ProductionCalculator.Buildings
+@using System.Linq
+
+@page "/buildingselection"
+@inject Blackboard Blackboard
+
+<style>
+	input[type="number"]::-webkit-outer-spin-button,
+	input[type="number"]::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+
+	input[type="number"] {
+		-moz-appearance: textfield;
+	}
+
+	.inputBox {
+		width: 4rem;
+		font-size: 0.75rem;
+		border: 2px solid;
+		border-color: black;
+		border-radius: 4px;
+		color: white;
+		outline: none;
+	}
+</style>
+
+<div>
+	@foreach (var group in this.GetBuildings())
+	{
+		<div style="display:flex">
+			@foreach (var item in group)
+			{
+				<div style="text-align: center; align-content: center">
+					<img class="building" draggable="false" src=@(@$".\Icons\{item.IconLocation}") />
+					<div>
+						<InputNumber class="dark text inputBox" TValue="double" @bind-Value=@item.Amount />
+					</div>
+				</div>
+			}
+		</div>
+	}
+</div>
+
+@code
+{
+	public IEnumerable<IEnumerable<AbstractBuilding>> GetBuildings()
+	{
+		return
+		[
+			this.Blackboard.PioneersBuildings,
+			this.Blackboard.ColonistsBuildings,
+			this.Blackboard.TownsmenBuildings,
+			this.Blackboard.MerchantsBuildings,
+			this.Blackboard.ParagonsBuildings,
+			this.Blackboard.FarmersBuildings,
+			this.Blackboard.WorkersBuildings,
+			this.Blackboard.NorthernBuildings,
+			this.Blackboard.ApprenticeBuildings,
+			this.Blackboard.AdeptsBuildings,
+			this.Blackboard.ArchmagesBuildings
+		];
+	}
+}

@@ -1,0 +1,35 @@
+﻿@using ParagonPioneers2ProductionCalculator.Buildings
+@using System.Linq
+
+@if (this.MissingAmount != 0)
+{
+	<div>
+		<img class="@this.ImageClass" draggable="false" src=@(@$".\Icons\{this.IconLocation}") />
+		<div class="text">
+			@(this.MissingAmount.ToString("0.##"))<br />
+			@if (this.TotalAmount != this.MissingAmount)
+			{
+				@($"({this.TotalAmount.ToString("0.##")})")
+			}
+			else
+			{
+				@("")
+			}
+		</div>
+	</div>
+}
+
+@code
+{
+	[Parameter]
+	public required string IconLocation { get; set; }
+
+	[Parameter]
+	public required string ImageClass { get; set; }
+
+	[Parameter]
+	public required double MissingAmount { get; set; }
+
+	[Parameter]
+	public required double TotalAmount { get; set; }
+}
